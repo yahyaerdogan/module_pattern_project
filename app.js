@@ -56,6 +56,19 @@ const ProductController = (function () {
             data.products.push(newProduct);
             return newProduct;
         },
+        updateProduct: function (name, price) {
+            let product = null;
+
+            data.products.forEach(function (prd) {
+                if (prd.id == data.selectedProduct.id) {
+                    prd.name = name;
+                    prd.price = parseFloat(price);
+                    product = prd;
+                }
+            });
+
+            return product;
+        },
         getTotal: function () {
             let total = 0;
 
@@ -77,6 +90,7 @@ const UIController = (function () {
 
     const Selectors = {
         productList: "#item-list",
+        productListItems: "#item-list tr",
         addButton: '.addBtn',
         updateButton: '.updateBtn',
         cancelButton: '.cancelBtn',
@@ -126,6 +140,19 @@ const UIController = (function () {
 
             document.querySelector(Selectors.productList).innerHTML += item;
         },
+        updateProduct: function (prd) {
+            let updatedItem = null;
+            let items = document.querySelectorAll(Selectors.productListItems);
+            items.forEach(function (item) {
+                if (item.classList.contains('bg-warning')) {
+                    item.children[1].textContent = prd.name;
+                    item.children[2].textContent = prd.price + ' $';
+                    updatedItem = item;
+                }
+            });
+
+            return updatedItem;
+        },
         clearInputs: function () {
             document.querySelector(Selectors.productName).value = '';
             document.querySelector(Selectors.productPrice).value = '';
@@ -142,26 +169,30 @@ const UIController = (function () {
             document.querySelector(Selectors.productName).value = selectedProduct.name;
             document.querySelector(Selectors.productPrice).value = selectedProduct.price;
         },
-        addingState:function(){
+        addingState: function (item) {
+            if(item){
+                item.classList.remove('bg-warning');
+            }
+
             UIController.clearInputs();
-            document.querySelector(Selectors.addButton).style.display='inline';
-            document.querySelector(Selectors.updateButton).style.display='none';
-            document.querySelector(Selectors.deleteButton).style.display='none';
-            document.querySelector(Selectors.cancelButton).style.display='none';
+            document.querySelector(Selectors.addButton).style.display = 'inline';
+            document.querySelector(Selectors.updateButton).style.display = 'none';
+            document.querySelector(Selectors.deleteButton).style.display = 'none';
+            document.querySelector(Selectors.cancelButton).style.display = 'none';
         },
-        editState:function(tr){
+        editState: function (tr) {
 
             const parent = tr.parentNode;
 
-            for(let i=0;i<parent.children.length;i++){
+            for (let i = 0; i < parent.children.length; i++) {
                 parent.children[i].classList.remove('bg-warning');
             }
 
             tr.classList.add('bg-warning');
-            document.querySelector(Selectors.addButton).style.display='none';
-            document.querySelector(Selectors.updateButton).style.display='inline';
-            document.querySelector(Selectors.deleteButton).style.display='inline';
-            document.querySelector(Selectors.cancelButton).style.display='inline';
+            document.querySelector(Selectors.addButton).style.display = 'none';
+            document.querySelector(Selectors.updateButton).style.display = 'inline';
+            document.querySelector(Selectors.deleteButton).style.display = 'inline';
+            document.querySelector(Selectors.cancelButton).style.display = 'inline';
         }
     }
 })();
@@ -178,8 +209,11 @@ const App = (function (ProductCtrl, UICtrl) {
         // add product event
         document.querySelector(UISelectors.addButton).addEventListener('click', productAddSubmit);
 
-        // edit product
-        document.querySelector(UISelectors.productList).addEventListener('click', productEditSubmit);
+        // edit product click
+        document.querySelector(UISelectors.productList).addEventListener('click', productEditClick);
+
+        // edit product submit
+        document.querySelector(UISelectors.updateButton).addEventListener('click', editProductSubmit);
 
     }
 
@@ -210,7 +244,7 @@ const App = (function (ProductCtrl, UICtrl) {
         e.preventDefault();
     }
 
-    const productEditSubmit = function (e) {
+    const productEditClick = function (e) {
 
         if (e.target.classList.contains('edit-product')) {
 
@@ -227,6 +261,32 @@ const App = (function (ProductCtrl, UICtrl) {
 
             UICtrl.editState(e.target.parentNode.parentNode);
         }
+        e.preventDefault();
+    }
+
+    const editProductSubmit = function (e) {
+
+        const productName = document.querySelector(UISelectors.productName).value;
+        const productPrice = document.querySelector(UISelectors.productPrice).value;
+
+        if (productName !== '' && productPrice !== '') {
+
+            // update product
+            const updatedProduct = ProductCtrl.updateProduct(productName, productPrice);
+
+            // update ui
+            let item = UICtrl.updateProduct(updatedProduct);
+
+            // get total
+            const total = ProductCtrl.getTotal();
+
+            // show total
+            UICtrl.showTotal(total);
+
+            UICtrl.addingState(item);
+            
+        }
+
         e.preventDefault();
     }
 
@@ -260,3 +320,4 @@ const App = (function (ProductCtrl, UICtrl) {
 })(ProductController, UIController);
 
 App.init();
+
